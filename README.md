@@ -267,14 +267,6 @@ If you use this code in your research, please cite:
   title={LiveFigure: Automated Scientific Figure Generation},
   author={...},
   journal={...},
-  year={2024}
+  year={2026}
 }
 ```
-
-## License
-
-[Specify your license here]
-
-## Contact
-
-[Your contact information]
