@@ -244,9 +244,7 @@ LiveFigure/
 │   ├── visual_researcher.py   # Visual Deep Research module (Stage I)
 │   ├── tools.py                # Standardized skills library (Stage II)
 │   ├── coder_prompts.py       # Experience-driven constraints (Stage II)
-│   ├── batch_runner.py         # Batch processing
-│   ├── run_evaluation_ours.py # Evaluation scripts
-│   └── run_evaluation_ours_edit.py
+│   └── batch_runner.py         # Batch processing
 ├── assets/
 │   └── workflow.png            # Workflow diagram
 ├── requirements.txt            # Python dependencies
@@ -275,13 +273,6 @@ task_YYYYMMDD_HHMMSS/
 ├── 02_code_iter_1_*.pptx             # Final refined figure (Stage III output)
 └── ...
 ```
-
-## Evaluation
-
-The system includes evaluation scripts for assessing generation quality:
-
-- `run_evaluation_ours.py`: Comprehensive 9-metric evaluation
-- `run_evaluation_ours_edit.py`: Semantic Edit Distance (SED) evaluation
 
 ## Technical Highlights
 
