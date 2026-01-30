@@ -8,11 +8,6 @@ def main():
     # Runtime Configuration
     # ==========================================
     
-    # Debug switch
-    # True:  Start from Step 4 (clone old data from TARGET_DIR, directly enter iterative optimization)
-    # False: Start from Step 1 (full pipeline)
-    ENABLE_STEP4_DEBUG = False
-    
     # Output directory
     # None:  Automatically create new directory based on timestamp (recommended, prevents overwriting)
     # Path string: Specify a particular directory (e.g., "./output/test_run")
@@ -24,13 +19,11 @@ def main():
     manager = WorkflowManager()
     
     print(f"🚀 Starting task...")
-    print(f"  - Debug Mode (Step 4 only): {ENABLE_STEP4_DEBUG}")
     
     # Call the run interface and receive return value
     success, message = manager.run(
         user_requirement=user_query, 
-        output_dir=CUSTOM_OUTPUT_DIR, 
-        debug_from_step4=ENABLE_STEP4_DEBUG
+        output_dir=CUSTOM_OUTPUT_DIR
     )
 
     # ==========================================

@@ -31,6 +31,17 @@ class Config:
     MAX_ITERATIONS = 2
     PPT_WIDTH_Cm = 33.867
     PPT_HEIGHT_Cm = 19.05
+    
+    # ================= Visual Deep Researcher Configuration =================
+    # Enable Visual Deep Research (retrieval + style extraction)
+    # Set to False to skip this step and use default style
+    ENABLE_DEEP_RESEARCH = os.getenv("ENABLE_DEEP_RESEARCH", "False").lower() == "true"
+    
+    # Retrieval configuration
+    RETRIEVAL_TOP_K = int(os.getenv("RETRIEVAL_TOP_K", "3"))
+    
+    # Embedding model configuration
+    EMBEDDING_MODEL_NAME = os.getenv("EMBEDDING_MODEL_NAME", "text-embedding-3-large")
 
     @staticmethod
     def create_run_directory():

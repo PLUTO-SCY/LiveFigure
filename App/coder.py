@@ -49,13 +49,14 @@ class Coder:
             print(f"❌ Gemini API error: {e}")
             return None
 
-    def image_to_code(self, image_path, requirement, asset_map=None, output_filename="temp_render.pptx"):
+    def image_to_code(self, image_path, requirement, asset_map=None, style_guide=None, output_filename="temp_render.pptx"):
         # Calculate size hints
         w_cm = Config.PPT_WIDTH_Cm
         h_cm = Config.PPT_HEIGHT_Cm
 
         """
         When generating code, if asset_map exists, inject it into the Prompt.
+        If style_guide exists, incorporate design style constraints.
         """
         asset_prompt_section = ""
         if asset_map:
@@ -72,6 +73,46 @@ class Coder:
             # Inserting the 'Brain' icon
             slide.shapes.add_picture("{list(asset_map.values())[0] if asset_map else 'path'}", Inches(1), Inches(1), width=Inches(1))
             """
+        
+        # Style guide section
+        style_prompt_section = ""
+        if style_guide:
+            layout_engine = style_guide.get("layout_engine", {})
+            node_style = style_guide.get("node_style", {})
+            edge_style = style_guide.get("edge_style", {})
+            color_palette = style_guide.get("color_palette", [])
+            
+            style_lines = ["*** DESIGN STYLE CONSTRAINTS (Follow these guidelines): ***"]
+            
+            if layout_engine:
+                flow_dir = layout_engine.get("flow_direction", "")
+                topology = layout_engine.get("topology", "")
+                if flow_dir:
+                    style_lines.append(f"- Layout Flow: {flow_dir}")
+                if topology:
+                    style_lines.append(f"- Topology: {topology}")
+            
+            if node_style:
+                shape = node_style.get("shape_primitive", "")
+                if shape:
+                    style_lines.append(f"- Node Shape: {shape}")
+            
+            if edge_style:
+                edge_type = edge_style.get("type", "")
+                if edge_type:
+                    style_lines.append(f"- Edge Type: {edge_type}")
+            
+            if color_palette:
+                colors = []
+                for c in color_palette[:5]:  # Limit to 5 colors
+                    if isinstance(c, dict):
+                        colors.append(c.get("hex", ""))
+                    elif isinstance(c, str):
+                        colors.append(c)
+                if colors:
+                    style_lines.append(f"- Color Palette: {', '.join(colors)}")
+            
+            style_prompt_section = "\n".join(style_lines) + "\n"
         
         prompt = f"""
         You are an expert Python developer specialized in `python-pptx`.
@@ -93,6 +134,7 @@ class Coder:
         2. **Output**: You MUST save the presentation exactly as "{output_filename}".
         3. **Imports**: Include ALL necessary imports (Presentation, Cm, Inches, RGBColor, etc.).
 
+        {style_prompt_section}
         
         {asset_prompt_section}
 

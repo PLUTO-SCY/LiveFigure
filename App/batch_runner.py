@@ -108,33 +108,30 @@ class BatchRunner:
                 pbar.write(f"⏩ [{case_id}] V1 已完成，跳过...")
                 success_v1 = True
             else:
-                pbar.write(f"\n🌀 [{case_id}] 正在运行 V1...")
+                pbar.write(f"\n🌀 [{case_id}] Running V1...")
                 try:
-                    # 这里的 debug_from_step4 设为 False，因为批量跑通常是跑全流程
                     success_v1, msg_v1 = self.manager.run(
                         user_requirement=prompt_v1, 
-                        output_dir=dir_v1, 
-                        debug_from_step4=False
+                        output_dir=dir_v1
                     )
                 except Exception as e:
                     success_v1, msg_v1 = False, str(e)
 
-            # ================= 4. 运行 V2 (独立检查) =================
+            # ================= 4. Run V2 (Independent Check) =================
             dir_v2 = os.path.join(case_dir, "V2_WithContext")
             success_v2 = False
             msg_v2 = "Skipped (Already Done)"
 
-            # 细粒度断点续传：独立检查 V2
+            # Fine-grained checkpoint resume: Independent check for V2
             if self._is_step_done(dir_v2):
-                pbar.write(f"⏩ [{case_id}] V2 已完成，跳过...")
+                pbar.write(f"⏩ [{case_id}] V2 completed, skipping...")
                 success_v2 = True
             else:
-                pbar.write(f"\n🌀 [{case_id}] 正在运行 V2...")
+                pbar.write(f"\n🌀 [{case_id}] Running V2...")
                 try:
                     success_v2, msg_v2 = self.manager.run(
                         user_requirement=prompt_v2, 
-                        output_dir=dir_v2, 
-                        debug_from_step4=False
+                        output_dir=dir_v2
                     )
                 except Exception as e:
                     success_v2, msg_v2 = False, str(e)

@@ -35,17 +35,31 @@ The system follows a modular architecture with the following key components:
    - Processes and slices sprite sheets
    - Manages icon asset library
 
-6. **Tools** (`tools.py`)
+6. **VisualDeepResearcher** (`visual_researcher.py`)
+   - Performs semantic search in vector database for reference images
+   - Extracts design styles from retrieved images using VLM
+   - Synthesizes multiple style analyses into unified style guide
+   - Optional component that enhances generation quality when enabled
+
+7. **Tools** (`tools.py`)
    - High-level drawing utilities for python-pptx
    - Provides connectors, shapes, and text rendering functions
    - Handles advanced features like gradients and custom paths
 
 ## Workflow Pipeline
 
-The system operates in four main stages:
+The system operates in five main stages:
+
+### Step 0: Visual Deep Research (Optional)
+- **Reference Retrieval**: Searches a vector database for similar scientific figures using semantic embedding
+- **Style Extraction**: Analyzes retrieved reference images using VLM to extract design patterns
+- **Style Guide Generation**: Synthesizes multiple reference analyses into a unified design style guide
+- **Integration**: The style guide influences subsequent blueprint generation and code generation
+- This step can be enabled/disabled via `ENABLE_DEEP_RESEARCH` configuration
 
 ### Step 1: Visual Concept Generation
 - Uses Gemini API to generate a reference image based on the textual description
+- Incorporates design style constraints from Step 0 (if enabled)
 - Creates a high-quality visual blueprint for the target figure
 - Ensures publication-quality aesthetic standards
 
@@ -57,6 +71,7 @@ The system operates in four main stages:
 
 ### Step 2 & 3: Initial Code Generation and Debugging
 - Converts the reference image to executable Python code using VLM
+- Incorporates style guide constraints (from Step 0) into code generation prompts
 - Implements automatic debugging loop with retry mechanism
 - Handles syntax errors and runtime exceptions
 - Produces initial working implementation
@@ -119,6 +134,15 @@ export API_KEY="your_api_key"
 export GEMINI_API_KEY="your_gemini_api_key"
 export GEMINI_GEN_IMG_URL="your_gemini_image_generation_url"
 export LIBREOFFICE_APP_PATH="/path/to/libreoffice/AppRun"
+
+# Optional: Visual Deep Research configuration
+export ENABLE_DEEP_RESEARCH="true"  # Enable reference retrieval and style extraction
+export RESEARCHER_META_PATH="path/to/metadata.json"  # Path to reference metadata
+export RESEARCHER_INDEX_PATH="path/to/index.npy"  # Path to vector index
+export EMBEDDING_API_BASE="your_embedding_api_base"  # Embedding API endpoint
+export EMBEDDING_API_KEY="your_embedding_api_key"  # Embedding API key
+export EMBEDDING_MODEL_NAME="text-embedding-3-large"  # Embedding model name
+export RETRIEVAL_TOP_K="3"  # Number of reference images to retrieve
 ```
 
 4. Update configuration in `App/config.py` if needed:
@@ -165,6 +189,17 @@ The system supports multiple models for different tasks:
 - **MODEL_CODER**: Used for code generation and refinement
 - **MODEL_VLM**: Vision-language model for image understanding
 - **MODEL_PLANNER**: Used for icon planning and description extraction
+- **EMBEDDING_MODEL_NAME**: Used for semantic search in Visual Deep Research
+
+### Visual Deep Research Configuration
+
+When `ENABLE_DEEP_RESEARCH` is enabled, the system requires:
+
+- **RESEARCHER_META_PATH**: Path to JSON file containing reference image metadata
+- **RESEARCHER_INDEX_PATH**: Path to NumPy array file containing pre-computed embeddings
+- **EMBEDDING_API_BASE**: API endpoint for embedding computation
+- **EMBEDDING_API_KEY**: API key for embedding service
+- **RETRIEVAL_TOP_K**: Number of top reference images to retrieve (default: 3)
 
 ### Runtime Parameters
 
@@ -185,6 +220,7 @@ LiveFigure/
 │   ├── api_clients.py          # API management
 │   ├── ppt_renderer.py         # Code execution and rendering
 │   ├── icon_factory.py         # Icon asset generation
+│   ├── visual_researcher.py   # Visual Deep Research module
 │   ├── tools.py                # Drawing utilities
 │   ├── coder_prompts.py       # Prompt templates
 │   ├── batch_runner.py         # Batch processing
@@ -202,6 +238,7 @@ Each task generates a timestamped directory containing:
 task_YYYYMMDD_HHMMSS/
 ├── requirement.txt                    # Original user requirement
 ├── tools.py                          # Copy of drawing utilities
+├── style_guide.json                  # Design style guide (Step 0, if enabled)
 ├── 00_reference_gemini.png           # Reference image (Step 1)
 ├── assets/                            # Icon assets (Step 1.5)
 │   ├── assets_grid_sheet_raw.png
@@ -241,6 +278,25 @@ Multiple strategies ensure robust execution:
 3. **Debug Loop**: Automatic retry with error analysis
 4. **Graceful Degradation**: Continues with partial results when possible
 
+### Visual Deep Research
+
+When enabled, the system performs semantic search and style extraction:
+
+1. **Reference Retrieval**: 
+   - Compute query embedding from user requirement
+   - Search vector database using cosine similarity
+   - Retrieve top-K most similar reference figures
+
+2. **Style Extraction**:
+   - Analyze each retrieved image using VLM
+   - Extract design patterns (layout, colors, shapes, typography)
+   - Synthesize multiple analyses into unified style guide
+
+3. **Style Integration**:
+   - Style guide influences reference image generation prompt
+   - Style constraints incorporated into code generation
+   - Ensures consistency with reference design patterns
+
 ### Icon Generation
 
 Complex icons are generated in batch:
@@ -250,23 +306,3 @@ Complex icons are generated in batch:
 3. Generate sprite sheet with all icons
 4. Slice and process individual icons
 5. Make icons available to code generator
-
-## Limitations and Future Work
-
-- Currently requires LibreOffice for PDF conversion
-- Icon generation depends on external API availability
-- Iteration count is fixed (could be adaptive)
-- Limited support for multi-page figures
-
-## Citation
-
-If you use this code in your research, please cite:
-
-```bibtex
-@article{livefigure2024,
-  title={LiveFigure: Automated Scientific Figure Generation},
-  author={...},
-  journal={...},
-  year={2026}
-}
-```
