@@ -13,7 +13,6 @@ The system follows a modular architecture with the following key components:
 1. **WorkflowManager** (`workflow_manager.py`)
    - Orchestrates the entire generation pipeline
    - Manages state across multiple stages
-   - Handles both full pipeline and debug modes
 
 2. **Coder** (`coder.py`)
    - Generates Python code from visual references using VLMs
@@ -47,6 +46,10 @@ The system follows a modular architecture with the following key components:
    - Handles advanced features like gradients and custom paths
 
 ## Workflow Pipeline
+
+The following diagram illustrates the complete workflow of the LiveFigure system:
+
+![Workflow Diagram](assets/workflow.png)
 
 The system operates in five main stages:
 
