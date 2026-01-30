@@ -2,48 +2,64 @@
 
 ## Overview
 
-LiveFigure is an automated system for generating publication-quality scientific diagrams from textual descriptions. The system employs a multi-stage pipeline that combines vision-language models (VLMs), code generation, and iterative refinement to produce high-quality scientific figures suitable for academic publications.
+LiveFigure is an agentic framework that simulates the cognitive workflow of expert human designers to generate publication-quality scientific diagrams from textual descriptions. The system decomposes the figure generation task into three specialized stages that work together to produce editable PowerPoint figures with both semantic alignment and visual clarity.
 
 ## Architecture
 
-The system follows a modular architecture with the following key components:
+The system follows a modular architecture organized around the three-stage pipeline. Each stage employs specialized components that work together to transform textual input into editable PowerPoint figures.
 
-### Core Components
+### Stage I Components: Visual Planning
 
-1. **WorkflowManager** (`workflow_manager.py`)
-   - Orchestrates the entire generation pipeline
-   - Manages state across multiple stages
+- **VisualDeepResearcher** (`visual_researcher.py`)
+  - Performs semantic search in vector database for reference images
+  - Extracts design styles from retrieved images using VLM
+  - Synthesizes multiple style analyses into unified style guide
+  - Optional component that enhances generation quality when enabled
 
-2. **Coder** (`coder.py`)
-   - Generates Python code from visual references using VLMs
-   - Performs code debugging and refinement
-   - Implements Actor-Critic pattern for iterative improvement
+- **IconFactory** (`icon_factory.py`)
+  - Generates complex icon assets in batch using grid-based strategy
+  - Processes and slices sprite sheets
+  - Manages icon asset library with style consistency
 
-3. **APIManager** (`api_clients.py`)
-   - Manages API interactions with LLMs and VLMs
-   - Handles image generation requests
-   - Provides unified interface for model communication
+- **APIManager** (`api_clients.py`)
+  - Handles image generation requests for blueprint creation
+  - Provides unified interface for VLM communication
 
-4. **PPTRenderer** (`ppt_renderer.py`)
-   - Executes generated Python code
-   - Converts PPTX to PDF and PNG formats
-   - Handles error recovery and file management
+### Stage II Components: Procedural Generation
 
-5. **IconFactory** (`icon_factory.py`)
-   - Generates complex icon assets in batch
-   - Processes and slices sprite sheets
-   - Manages icon asset library
+- **Tools** (`tools.py`)
+  - Standardized skills library with high-level drawing utilities
+  - Provides connectors, shapes, and text rendering functions
+  - Handles advanced features like gradients and custom paths
+  - Pre-validated atomic primitives that guarantee executability
 
-6. **VisualDeepResearcher** (`visual_researcher.py`)
-   - Performs semantic search in vector database for reference images
-   - Extracts design styles from retrieved images using VLM
-   - Synthesizes multiple style analyses into unified style guide
-   - Optional component that enhances generation quality when enabled
+- **Coder** (`coder.py`)
+  - Generates Python code from visual references using VLMs
+  - Incorporates experience-driven constraints from best practices
+  - Implements self-correcting execution loop with error recovery
 
-7. **Tools** (`tools.py`)
-   - High-level drawing utilities for python-pptx
-   - Provides connectors, shapes, and text rendering functions
-   - Handles advanced features like gradients and custom paths
+- **CoderPrompts** (`coder_prompts.py`)
+  - Contains PPTX best practices and negative constraints
+  - Evolving experience repository that prevents known error patterns
+
+- **PPTRenderer** (`ppt_renderer.py`)
+  - Executes generated Python code
+  - Converts PPTX to PDF and PNG formats
+  - Handles error recovery and file management
+
+### Stage III Components: Visual Refinement
+
+- **Coder** (`coder.py`)
+  - Implements Actor-Critic pattern for iterative improvement
+  - Generates visual critiques and applies surgical code modifications
+  - Performs targeted refinement based on visual diagnostics
+
+### Pipeline Orchestration
+
+- **WorkflowManager** (`workflow_manager.py`)
+  - Orchestrates the entire three-stage generation pipeline
+  - Manages state and data flow across stages
+  - Coordinates component interactions
 
 ## Workflow Pipeline
 
@@ -51,63 +67,129 @@ The following diagram illustrates the complete workflow of the LiveFigure system
 
 ![Workflow Diagram](assets/workflow.png)
 
-The system operates in five main stages:
+Formally, let $\mathcal{T}_{in}$ denote the input methodological text. Our objective is to synthesize an editable PowerPoint figure $\mathcal{F}_{final}$ that maximizes both semantic alignment and visual clarity. The generation pipeline is formulated as a sequential composition of three specialized mapping functions:
 
-### Step 0: Visual Deep Research (Optional)
-- **Reference Retrieval**: Searches a vector database for similar scientific figures using semantic embedding
-- **Style Extraction**: Analyzes retrieved reference images using VLM to extract design patterns
-- **Style Guide Generation**: Synthesizes multiple reference analyses into a unified design style guide
-- **Integration**: The style guide influences subsequent blueprint generation and code generation
-- This step can be enabled/disabled via `ENABLE_DEEP_RESEARCH` configuration
+$$\mathcal{F}_{final} = \Psi_{refine} \circ \Psi_{assemble} \circ \Psi_{plan} (\mathcal{T}_{in})$$
 
-### Step 1: Visual Concept Generation
-- Uses Gemini API to generate a reference image based on the textual description
-- Incorporates design style constraints from Step 0 (if enabled)
-- Creates a high-quality visual blueprint for the target figure
-- Ensures publication-quality aesthetic standards
+The system operates in three main stages:
 
-### Step 1.5: Icon Asset Preparation (Optional)
-- Analyzes the reference image to identify complex icons
-- Generates icon descriptions using VLM
-- Creates a sprite sheet containing all required icons
-- Slices and processes individual icon assets
+### Stage I: Visual Planning via Prior Induction ($\Psi_{plan}$)
 
-### Step 2 & 3: Initial Code Generation and Debugging
-- Converts the reference image to executable Python code using VLM
-- Incorporates style guide constraints (from Step 0) into code generation prompts
-- Implements automatic debugging loop with retry mechanism
-- Handles syntax errors and runtime exceptions
-- Produces initial working implementation
+This stage aims to uncover high-quality design patterns from top-tier conferences, establishing reliable priors for visual layout in figure-generation tasks. The mapping function $\Psi_{plan}: \mathcal{T}_{in} \to \mathcal{B}$ transforms the input text into a visual blueprint $\mathcal{B}$.
 
-### Step 4: Actor-Critic Iterative Refinement
-- **Critic Phase**: Analyzes differences between current output and reference
-- Generates specific, actionable feedback on visual issues
-- Focuses on boundaries, connectors, text integrity, and alignment
-- **Actor Phase**: Applies surgical code modifications based on critique
-- Preserves existing assets and structure
-- Iterates for multiple rounds (configurable, default: 2)
+#### Visual Prior Induction
+
+To facilitate effective visual prior induction, the system leverages a **figure-text knowledge base** $\mathbb{K} = \{(v_i, c_i, d_i)\}_{i=1}^N$ focused on scientific figures, where $v_i$ is the figure, $c_i$ is the caption, and $d_i$ represents the dense technical description.
+
+**Reference Retrieval**: The retrieve agent first fetches the top-$k$ most semantically relevant reference figures from $\mathbb{K}$:
+$$\mathcal{R} = \operatorname*{TopK}_{k \in \mathbb{K}} \text{sim}(E(\mathcal{T}_{in}), E(k))$$
+
+where $E(\cdot)$ denotes the embedding function (e.g., Qwen3-Embedding).
+
+**Structural Plan Generation**: A VLM jointly analyzes the retrieved references $\mathcal{R}$ and the user input $\mathcal{T}_{in}$, examining the layout organization and visual composition. By abstracting and distilling their underlying design principles, the model produces a tailored structural plan:
+$$\mathcal{S}_{plan} = \text{VLM}_{reason}(\mathcal{T}_{in}, \mathcal{R})$$
+
+**Blueprint Generation**: The blueprint agent takes both the original context and the structural plan as prompts to generate the visual blueprint:
+$$\mathcal{B} = \text{Gen}_{img}(\mathcal{T}_{in}, \mathcal{S}_{plan})$$
+
+This blueprint provides spatial guidance for downstream procedural generation.
+
+#### Asset Generation for Complex Entities
+
+For domain-specific entities $\mathcal{E}_{entity}$ (e.g., "microscope," "robotic arm") whose visual complexity exceeds basic geometric primitives, an asset generation module synthesizes style-consistent assets using a **grid-based batch generation strategy**. Instead of synthesizing assets individually, the system generates a composite image containing an $M \times N$ grid of icons in a single pass, strictly conditioned on the visual style of $\mathcal{S}_{plan}$:
+
+$$\mathbb{A} = \Phi_{post}\left( \text{Gen}_{grid}(\mathcal{E}_{entity} \mid \mathcal{S}_{plan}) \right)$$
+
+where $\Phi_{post}$ performs grid cropping and background removal. This mechanism ensures that complex scientific entities are visually consistent and ready for seamless integration.
+
+**Key Components:**
+- **VisualDeepResearcher** (`visual_researcher.py`): Performs semantic search and style extraction
+- **IconFactory** (`icon_factory.py`): Generates complex icon assets in batch using grid-based strategy
+
+### Stage II: Procedural Figure Generation via Skills and Experience ($\Psi_{assemble}$)
+
+After establishing the visual blueprint $\mathcal{B}$ and the asset library $\mathbb{A}$, this stage procedurally generates an editable figure. We formalize this process as a mapping $\Psi_{assemble}: (\mathcal{B}, \mathbb{A}) \to \mathcal{F}_{init}$, where $\mathcal{F}_{init}$ represents the initial editable PowerPoint figure.
+
+#### Why PowerPoint?
+
+We choose **Microsoft PowerPoint** as the carrier for editable figures based on careful consideration of user accessibility and automation feasibility. PowerPoint offers a rare combination of broad user accessibility and developer-level openness, with rich programmatic interfaces (via OpenXML) that enable fine-grained manipulation of graphical primitives while supporting seamless export to standard vector formats.
+
+#### Standardized Skills as Atomic Primitives
+
+We construct a Python library of **Standardized Skills**, denoted as $\mathbb{S} = \{s_1, s_2, \dots, s_M\}$. Each skill $s_j$ is pre-debugged and rigorously validated, encapsulating complex rendering logic (such as connector routing and nested text-shape composition) into high-level semantic interfaces.
+
+The procedural generation process $\mathcal{M}_{gen}$ synthesizes an executable Python script $\mathcal{C}_{init}$ conditioned on the visual blueprint $\mathcal{B}$ and the skill library $\mathbb{S}$:
+
+$$\mathcal{F}_{init} = \text{Exec}(\mathcal{C}_{init}), \quad \mathcal{C}_{init} \sim \mathcal{M}_{gen}(\cdot \mid \mathcal{B}, \mathbb{S})$$
+
+This abstraction serves two critical purposes:
+1. **Guarantees Executability**: By constraining the model's action space to a curated set of verified atomic functions, we substantially reduce syntax errors and API hallucinations.
+2. **Enables Cognitive Offloading**: The abstraction decouples high-level layout reasoning from low-level implementation details, allowing the model to focus on semantic layout decisions without explicitly computing anchor points or pixel-level routing coordinates.
+
+#### Experience-Driven Constraint Injection
+
+To systematically mitigate API hallucinations and invalid parameter combinations, we introduce an **Evolving Experience Injection** mechanism, which distills debugging experiences accumulated during development into formalized negative constraints $\mathbb{E}_{neg}$. As the system processes an increasing number of generation cases, the experience repository is continuously updated by capturing newly observed runtime errors. Prohibitive rules are automatically incorporated into the prompt (e.g., "NEVER use `slide.shapes.add_shape(MSO_SHAPE.LINE, ...)` directly; use `add_connector` instead"), performing pre-pruning over the generation search space.
+
+#### Self-Correcting Execution Loop
+
+While standardized skills and experience constraints significantly reduce error rates, we incorporate a runtime feedback-based iterative debugging mechanism to handle sporadic complex logic conflicts. Upon execution failure, the system captures the error stack trace $\epsilon$ and feeds it back to the model. We define the debugging iteration sequence $\{\mathcal{C}_{debug}^{(t)}\}$ initialized with $\mathcal{C}_{debug}^{(0)} = \mathcal{C}_{draft}$:
+
+$$\mathcal{C}_{debug}^{(t+1)} = \text{Refine}(\mathcal{C}_{debug}^{(t)}, \epsilon^{(t)}), \quad \text{s.t. } t < T_{max}$$
+
+This loop terminates upon successful execution, yielding the validated executable script $\mathcal{C}_{exec}$.
+
+**Key Components:**
+- **Tools** (`tools.py`): Standardized skill library with high-level drawing utilities
+- **Coder** (`coder.py`): Code generation with experience-driven constraints
+- **CoderPrompts** (`coder_prompts.py`): Contains PPTX best practices and negative constraints
+- **PPTRenderer** (`ppt_renderer.py`): Executes generated code and handles error recovery
+
+### Stage III: Targeted Refinement via Visual Diagnostics ($\Psi_{refine}$)
+
+Although the script $\mathcal{C}_{exec}$ obtained from Stage II is valid and executable, the resulting figure $\mathcal{F}_{init}$ often exhibits subtle visual defects invisible to code-level logic, such as element occlusion or inconsistent styling. To bridge the gap between code logic and visual perception, we design a **Visual Diagnosis-Driven Refinement** closed-loop, formally modeled as an optimization mapping $\Psi_{refine}: \mathcal{F}_{init} \to \mathcal{F}_{final}$.
+
+#### Observe-Diagnose-Refine Process
+
+We formulate this phase as an iterative "observe-diagnose-refine" process. Let $\mathcal{C}^{(0)} = \mathcal{C}_{exec}$ denote the starting script inherited from Stage II. At each iteration $k$, the system:
+
+1. **Observes**: Renders the current script into a visual snapshot $I^{(k)}$
+2. **Diagnoses**: A VLM acts as a "visual critic" to perform diagnosis, outputting a structured **Actionable Issue List** $\mathcal{L}_{issue}$ that precisely localizes specific flaws:
+   $$\mathcal{L}_{issue}^{(k)} = \text{VLM}_{critic}(I^{(k)})$$
+3. **Refines**: The agent executes targeted refinement, applying incremental updates to the code conditioned on the feedback list:
+   $$\mathcal{C}^{(k+1)} = \text{Refine}(\mathcal{C}^{(k)}, \mathcal{L}_{issue}^{(k)})$$
+
+This loop continues until the issue list is empty or convergence is reached. The final publication-ready figure is obtained as $\mathcal{F}_{final} = \text{Exec}(\mathcal{C}_{final})$.
+
+**Key Features:**
+- **Surgical Modifications**: Instead of regenerating the entire script, applies incremental updates
+- **Preserves Structure**: Maintains existing assets and overall layout during refinement
+- **Multi-Modal Feedback**: Uses visual comparison between current output and reference blueprint
+- **Iterative Optimization**: Continues until visual quality meets publication standards
+
+**Key Components:**
+- **Coder** (`coder.py`): Implements Actor-Critic pattern with `generate_critique()` and `refine_code_with_critique()` methods
 
 ## Key Design Principles
 
-### 1. Modular Architecture
+### 1. Visual Prior Induction
+- Leverages high-quality exemplars from top-tier conferences
+- Establishes reliable visual priors through semantic search and style extraction
+- Ensures consistency with publication-quality design patterns
+
+### 2. Standardized Skills and Experience
+- Pre-debugged atomic primitives guarantee code executability
+- Cognitive offloading enables focus on semantic layout decisions
+- Evolving experience injection prevents known error patterns
+
+### 3. Visual Diagnosis-Driven Refinement
+- Multi-modal closed-loop feedback mechanism
+- Surgical code modifications preserve structure
+- Iterative optimization until visual quality meets standards
+
+### 4. Modular Architecture
 - Each component has a clear, single responsibility
-- Easy to swap implementations or add new features
-- Clean separation between API management, code generation, and rendering
-
-### 2. Robust Error Handling
-- Automatic code debugging with retry mechanisms
-- File recovery strategies for edge cases
-- Graceful degradation when components fail
-
-### 3. Asset Management
-- Pre-generation of complex icons for better quality
-- Asset registry system for code generation
-- Preservation of assets during refinement
-
-### 4. Iterative Refinement
-- Actor-Critic pattern for continuous improvement
-- Surgical code modifications to preserve structure
-- Focus on specific, actionable feedback
+- Clean separation between planning, generation, and refinement stages
+- Easy to extend and maintain
 
 ## Installation
 
@@ -164,8 +246,7 @@ from App.workflow_manager import WorkflowManager
 manager = WorkflowManager()
 success, message = manager.run(
     user_requirement="Your figure description here",
-    output_dir=None,  # Auto-create timestamped directory
-    debug_from_step4=False  # Full pipeline
+    output_dir=None  # Auto-create timestamped directory
 )
 ```
 
@@ -219,18 +300,21 @@ LiveFigure/
 │   ├── main.py                 # Entry point
 │   ├── config.py               # Configuration management
 │   ├── workflow_manager.py     # Pipeline orchestration
-│   ├── coder.py                # Code generation and refinement
+│   ├── coder.py                # Code generation and refinement (Stage II & III)
 │   ├── api_clients.py          # API management
-│   ├── ppt_renderer.py         # Code execution and rendering
-│   ├── icon_factory.py         # Icon asset generation
-│   ├── visual_researcher.py   # Visual Deep Research module
-│   ├── tools.py                # Drawing utilities
-│   ├── coder_prompts.py       # Prompt templates
+│   ├── ppt_renderer.py         # Code execution and rendering (Stage II)
+│   ├── icon_factory.py         # Icon asset generation (Stage I)
+│   ├── visual_researcher.py   # Visual Deep Research module (Stage I)
+│   ├── tools.py                # Standardized skills library (Stage II)
+│   ├── coder_prompts.py       # Experience-driven constraints (Stage II)
 │   ├── batch_runner.py         # Batch processing
 │   ├── run_evaluation_ours.py # Evaluation scripts
 │   └── run_evaluation_ours_edit.py
+├── assets/
+│   └── workflow.png            # Workflow diagram
 ├── requirements.txt            # Python dependencies
-└── README.md                  # This file
+├── README.md                  # This file
+└── SETUP.md                   # Setup instructions
 ```
 
 ## Output Structure
@@ -239,18 +323,19 @@ Each task generates a timestamped directory containing:
 
 ```
 task_YYYYMMDD_HHMMSS/
-├── requirement.txt                    # Original user requirement
-├── tools.py                          # Copy of drawing utilities
-├── style_guide.json                  # Design style guide (Step 0, if enabled)
-├── 00_reference_gemini.png           # Reference image (Step 1)
-├── assets/                            # Icon assets (Step 1.5)
+├── requirement.txt                    # Original user requirement (Stage I input)
+├── tools.py                          # Copy of standardized skills library
+├── style_guide.json                  # Design style guide from Visual Prior Induction (Stage I)
+├── 00_reference_gemini.png           # Visual blueprint (Stage I output)
+├── assets/                            # Icon asset library (Stage I)
 │   ├── assets_grid_sheet_raw.png
 │   └── icon_*.png
-├── 01_code_iter_0_*.py               # Initial code generation
-├── 01_code_iter_0_*.pptx             # Generated presentations
+├── 01_code_iter_0_*.py               # Initial executable script (Stage II)
+├── 01_code_iter_0_*.pptx             # Initial editable figure (Stage II output)
 ├── 01_code_iter_0_*.png              # Rendered images
-├── 02_critique_iter_1.txt            # Critic feedback
-├── 02_code_iter_1_*.py               # Refined code
+├── 02_critique_iter_1.txt            # Visual diagnosis feedback (Stage III)
+├── 02_code_iter_1_*.py               # Refined script (Stage III)
+├── 02_code_iter_1_*.pptx             # Final refined figure (Stage III output)
 └── ...
 ```
 
@@ -263,49 +348,47 @@ The system includes evaluation scripts for assessing generation quality:
 
 ## Technical Details
 
-### Code Generation
+### Standardized Skills Library
 
-The system uses VLMs to generate Python code that leverages the `python-pptx` library. The generated code:
+The `tools.py` module provides a comprehensive library of standardized skills that encapsulate complex rendering logic:
 
-- Uses high-level drawing tools from `tools.py`
-- Handles complex layouts and connections
-- Supports gradients, transparency, and custom paths
-- Follows best practices to avoid common pitfalls
+- **Connection Tools**: `add_connector()`, `add_free_arrow()`, `add_custom_route_arrow()` - Handle intelligent routing, gradients, and custom paths
+- **Shape Tools**: `add_block()`, `add_label()`, `add_container()` - Support various shapes with automatic text centering, transparency, and styling
+- **Advanced Features**: Gradient lines, custom polyline paths, alpha transparency, automatic arrow sizing
 
-### Error Recovery
+Each skill is pre-validated and handles edge cases internally, significantly reducing code complexity and error rates.
 
-Multiple strategies ensure robust execution:
+### Experience-Driven Constraints
 
-1. **Syntax Auto-Correction**: Fixes common syntax errors automatically
-2. **File Recovery**: Handles cases where output files have unexpected names
-3. **Debug Loop**: Automatic retry with error analysis
-4. **Graceful Degradation**: Continues with partial results when possible
+The system maintains an evolving repository of negative constraints (`PPTX_BEST_PRACTICES` in `coder_prompts.py`) that prevent known error patterns:
 
-### Visual Deep Research
+- API misuse prevention (e.g., never use `add_shape` for lines)
+- Color assignment safety (only RGBColor objects accepted)
+- Coordinate precision requirements (integers only, no float calculations)
+- Import and enum constraints
 
-When enabled, the system performs semantic search and style extraction:
+These constraints are automatically injected into generation prompts, performing pre-pruning over the search space.
 
-1. **Reference Retrieval**: 
-   - Compute query embedding from user requirement
-   - Search vector database using cosine similarity
-   - Retrieve top-K most similar reference figures
+### Self-Correcting Execution Loop
 
-2. **Style Extraction**:
-   - Analyze each retrieved image using VLM
-   - Extract design patterns (layout, colors, shapes, typography)
-   - Synthesize multiple analyses into unified style guide
+The system implements a robust execution and debugging mechanism:
 
-3. **Style Integration**:
-   - Style guide influences reference image generation prompt
-   - Style constraints incorporated into code generation
-   - Ensures consistency with reference design patterns
+1. **Syntax Auto-Correction**: Fixes common syntax errors (e.g., "import from" → "from")
+2. **Error Capture**: Extracts detailed error logs from execution failures
+3. **Iterative Debugging**: Feeds error information back to the model for targeted fixes
+4. **File Recovery**: Handles cases where output files have unexpected names
+5. **Timeout Protection**: Prevents infinite execution loops
 
-### Icon Generation
+### Visual Diagnosis Mechanism
 
-Complex icons are generated in batch:
+The refinement stage employs a structured visual inspection process:
 
-1. Identify icons from reference image
-2. Extract visual descriptions
-3. Generate sprite sheet with all icons
-4. Slice and process individual icons
-5. Make icons available to code generator
+1. **Structured Checklist**: Evaluates four critical dimensions:
+   - Canvas & Boundaries (content clipping)
+   - Connector Logic & Style (routing, arrow sizes)
+   - Text Integrity (spilling, font size, color)
+   - Visual Alignment & Style (layout consistency)
+
+2. **Actionable Feedback**: Generates specific, element-bound modification suggestions rather than vague advice
+
+3. **Surgical Refinement**: Applies only the necessary changes while preserving 95% of the original code structure
